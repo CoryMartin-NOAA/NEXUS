@@ -3,6 +3,7 @@ Extract a small spatial subset from larger inputs.
 """
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 
 import numpy as np
@@ -20,10 +21,13 @@ loc_name = "ncwcp"
 # Grid settings
 nx = ny = 3
 dxy = 0.1
-
-case_id = f"{loc_name}_anthro_01x01_nx={nx}_ny={ny}"
-
 assert nx % 2 == 1 and ny % 2 == 1, "nx and ny must be odd"
+
+s_dxy = f"{dxy:.3g}".replace(".", "")
+case_id = f"{loc_name}_anthro_{s_dxy}x{s_dxy}_nx={nx}_ny={ny}"
+case_dir = OUT_BASE / case_id
+case_dir.mkdir(exist_ok=True)
+(case_dir / "data").mkdir(exist_ok=True)
 
 # Round center to nearest HTAP grid point, which 0.1 deg but on the 0.05s
 print("original center:", latc, lonc)
@@ -61,7 +65,22 @@ print("lon:", lonv)
 # - HEMCO_sa_Spec.rc
 # - HEMCO_sa_Time.rc
 
-print(*sorted(IN_BASE.glob("*.rc")), sep="\n")
+rc_files = sorted(IN_BASE.glob("*.rc"))
+s_files = "\n".join(f"- {p.name}" for p in rc_files)
+print(f"Found:\n{s_files}")
+
+for desc, fn in {
+    "main config": "HEMCO_Config.rc",
+    "diagnostic definitions": "HEMCO_sa_Diagn.rc",
+    # "grid definition": "HEMCO_sa_Grid.rc",
+    "species definitions": "HEMCO_sa_Spec.rc",
+    "simulation time settings": "HEMCO_sa_Time.rc",
+}.items():
+    p_in = IN_BASE / fn
+    if p_in.is_file():
+        print(f"Copying {desc} from {p_in.relative_to(IN_BASE).as_posix()}")
+        shutil.copy(p_in, case_dir / fn)
+
 
 # Create HEMCO grid spec
 # Example:
@@ -92,11 +111,18 @@ NX: {nx}
 NY: {ny}
 NZ: 1
 """
-print(s_hemco_grid_spec)
+sep = "-" * 31
+print("Writing HEMCO grid spec:")
+print(sep)
+print(s_hemco_grid_spec, end="")
+print(sep)
+print("to", case_dir / "HEMCO_sa_Grid.rc")
+with open(case_dir / "HEMCO_sa_Grid.rc", "w") as f:
+    f.write(s_hemco_grid_spec)
 
 
 for p in IN_BASE.glob("data/*.nc"):
-    print(p.name)
+    print(p.relative_to(IN_BASE).as_posix())
 
     if "grid_spec" in p.name:  # grid_xt, etc., just for regridding
         continue  # FIXME
@@ -108,11 +134,10 @@ for p in IN_BASE.glob("data/*.nc"):
         sel = ds.sel(lat=latv, lon=np.mod(lonv, 360))
     else:
         sel = ds.sel(lat=latv, lon=lonv, method="nearest")
-
     print("- lat:", sel.lat.values)
     print("- lon:", sel.lon.values)
 
-    # encoding = {k: {"zlib": True, "complevel": 3} for k in sel.data_vars}
-    # ds.to_netcdf(OUT_BASE / p.name, encoding=encoding)
-    # print(p.as_posix(), "=>", (OUT_BASE / p.name).as_posix())
-
+    p_out = case_dir / "data" / p.name
+    print("->(sel)", p_out.as_posix())
+    encoding = {k: {"zlib": True, "complevel": 3} for k in sel.data_vars}
+    sel.to_netcdf(p_out, encoding=encoding)
