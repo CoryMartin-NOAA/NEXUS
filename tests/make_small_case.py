@@ -10,30 +10,33 @@ import numpy as np
 import xarray as xr
 
 HERE = Path(__file__).parent
-IN_BASE = Path("~/downloads/gocart-nexus").expanduser()
 OUT_BASE = HERE / "data"
 
 
-# NCWCP
+# Short reference to the focus location and emissions configuration
+case_id_in = "ncwcp_anthro"
+
+# Focus location
 latc, lonc = 38.9721, -76.9245
-loc_id = "ncwcp"
+
+# Input case directory
+in_base = Path("~/downloads/gocart-nexus").expanduser()
+assert in_base.is_dir()
+print("input case directory:", in_base.as_posix())
 
 # Grid settings
 nx = ny = 3  # HEMCO grid
 dx = dy = 0.1
+ne = 1  # thickness of input data halo (cells)
 assert nx % 2 == 1 and ny % 2 == 1, "nx and ny must be odd"
-ne = 1  # edge
 
 s_dx = f"{dx:.3g}".replace(".", "")
 s_dy = f"{dy:.3g}".replace(".", "")
-
-emis_type = "anthro"
-
-case_id = f"{loc_id}_{emis_type}_dx={s_dx}_dy={s_dy}_nx={nx}_ny={ny}_ne={ne}"
+case_id = f"{case_id_in}_dx={s_dx}_dy={s_dy}_nx={nx}_ny={ny}_ne={ne}"
 case_dir = OUT_BASE / case_id
 case_dir.mkdir(exist_ok=True)
 (case_dir / "data").mkdir(exist_ok=True)
-print("case ID:", case_id)
+print("full case ID:", case_id)
 
 # Round center point to nearest grid point center, assuming [0, dx, dx + 1, ...] are edges
 xc_i, yc_i = lonc, latc
@@ -49,8 +52,8 @@ yc = round(yc, 3)
 xc = round(xc, 3)
 xc = (xc + 180) % 360 - 180  # ensure [-180, 180)
 fmt = "9.4f"
-print(f"original center (y, x): {yc_i:{fmt}} {xc_i:{fmt}}")
-print(f"rounded center  (y, x): {xc:{fmt}} {yc:{fmt}}")
+print(f"input focus   (y, x): {yc_i:{fmt}} {xc_i:{fmt}}")
+print(f"rounded focus (y, x): {xc:{fmt}} {yc:{fmt}}")
 
 # Rectangular grid (centers)
 y = np.arange(
@@ -87,15 +90,15 @@ for desc, fn in {
     "species definitions": "HEMCO_sa_Spec.rc",
     "simulation time settings": "HEMCO_sa_Time.rc",
 }.items():
-    p_in = IN_BASE / fn
+    p_in = in_base / fn
     if p_in.is_file():
-        print(f"Copying {fn!r} ({desc})")
+        print(f"copying {fn!r} ({desc})")
         shutil.copy(p_in, case_dir / fn)
     else:
-        rc_files = sorted(IN_BASE.glob("*.rc"))
+        rc_files = sorted(in_base.glob("*.rc"))
         s_files = "\n".join(f"- {p.name}" for p in rc_files)
         raise RuntimeError(
-            f"{IN_BASE.as_posix()} is missing the {fn!r} file ({desc}). "
+            f"{in_base.as_posix()} is missing the {fn!r} file ({desc}). "
             f"The directory has these .rc files:\n{s_files}"
         )
 
@@ -134,11 +137,10 @@ NZ: 1
 fn = "HEMCO_sa_Grid.rc"
 desc = "grid definition"
 sep = "-" * 31
-print(f"Writing {fn!r} ({desc}):")
+print(f"writing {fn!r} ({desc}):")
 print(sep)
 print(s_hemco_grid_spec, end="")
 print(sep)
-print("to", case_dir / fn)
 with open(case_dir / fn, "w") as f:
     f.write(s_hemco_grid_spec)
 
@@ -147,8 +149,9 @@ with open(case_dir / fn, "w") as f:
 lat = y
 lon = x
 lon_360 = x_360
-for p in IN_BASE.glob("data/*.nc"):
-    print(p.relative_to(IN_BASE).as_posix())
+assert (in_base / "data").is_dir()
+for p in in_base.glob("data/*.nc"):
+    print(p.relative_to(in_base).as_posix())
 
     if "grid_spec" in p.name:  # grid_xt, etc., just for regridding
         continue  # FIXME
