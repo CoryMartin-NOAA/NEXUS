@@ -5,8 +5,10 @@ from __future__ import annotations
 
 import shutil
 from pathlib import Path
+from textwrap import indent
 
 import numpy as np
+import pandas as pd
 import xarray as xr
 
 HERE = Path(__file__).parent
@@ -18,7 +20,7 @@ case_id_in = "ncwcp_anthro"
 
 # Focus location
 latc, lonc = 38.9721, -76.9245
-latc, lonc = 38.9721, -26.9245  # testing tile1
+# latc, lonc = 38.9721, -26.9245  # testing tile1
 
 # Input case directory
 in_base = Path("~/downloads/gocart-nexus").expanduser()
@@ -169,7 +171,16 @@ for p in in_base.glob("data/*.nc"):
             & (lat_gs >= lat[0]) & (lat_gs <= lat[-1])
         )
         y_inds, x_inds = box.nonzero()
-        assert y_inds.size > 0
+        if not y_inds.size > 0:
+            print("- UFS grid spec appears not to overlap target grid. Will skip.")
+            parts = [
+                "lons:",
+                pd.cut(lon_gs.ravel(), bins=np.arange(0, 360 + 20, 20), right=False).value_counts().to_string(),
+                "lats:",
+                pd.cut(lat_gs.ravel(), bins=np.arange(-90, 90 + 20, 20), right=False).value_counts().to_string(),
+            ]
+            print(indent("\n".join(parts), "  "))
+            continue
         ix1, ix2 = x_inds.min(), x_inds.max()
         if not ix2 - ix1 > 1:
             ix1 -= 1
@@ -190,7 +201,6 @@ for p in in_base.glob("data/*.nc"):
 
         print("- lon:", ds.grid_lon.values)
         print("- lat:", ds.grid_lont.values)
-
     elif "HTAP" in p.name and dx == dy == 0.1:
         # Exact selection
         sel = ds.sel(lat=lat, lon=lon_360)
