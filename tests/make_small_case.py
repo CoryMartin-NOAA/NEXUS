@@ -18,6 +18,7 @@ case_id_in = "ncwcp_anthro"
 
 # Focus location
 latc, lonc = 38.9721, -76.9245
+latc, lonc = 38.9721, -26.9245  # testing tile1
 
 # Input case directory
 in_base = Path("~/downloads/gocart-nexus").expanduser()
@@ -153,10 +154,49 @@ assert (in_base / "data").is_dir()
 for p in in_base.glob("data/*.nc"):
     print(p.relative_to(in_base).as_posix())
 
+    ds = xr.open_dataset(p, decode_times=False)
+
     if "grid_spec" in p.name:  # grid_xt, etc., just for regridding
+        # edges: grid_lat, grid_lon (dims: grid_x, grid_y)
+        # centers: grid_latt, grid_lont (dims: grid_xt, grid_yt)
+        # lon in [0, 360)
+
+        da = ds.grid_lont
+        assert da.dims == ("grid_yt", "grid_xt")
+        a = da.values
+        inds = ((a >= lon_360[0]) & (a <= lon_360[-1])).nonzero()[1]
+        assert inds.size > 0
+        ix1, ix2 = inds.min(), inds.max()
+        if not ix2 - ix1 > 1:
+            ix1 -= 1
+            ix2 += 1
+
+        da = ds.grid_latt
+        assert da.dims == ("grid_yt", "grid_xt")
+        a = da.values
+        inds = ((a >= lat[0]) & (a <= lat[-1])).nonzero()[0]
+        assert inds.size > 0
+        iy1, iy2 = inds.min(), inds.max()
+        if not iy2 - iy1 > 1:
+            iy1 -= 1
+            iy2 += 1
+
+        buf = 1
+        ds = ds.isel(
+            grid_xt=slice(ix1, ix2 + 1),
+            grid_yt=slice(iy1, iy2 + 1),
+            grid_x=slice(ix1, ix2 + 2),
+            grid_y=slice(iy1, iy2 + 2),
+        )
+
+        print(ds.grid_lon.values)
+        print(ds.grid_lont.values)
+
+        ds.plot.scatter(x="grid_lont", y="grid_latt")
+        import matplotlib.pyplot as plt; plt.show()
+
         continue  # FIXME
 
-    ds = xr.open_dataset(p, decode_times=False)
 
     if "HTAP" in p.name and dx == dy == 0.1:
         # Exact selection
