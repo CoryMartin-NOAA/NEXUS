@@ -158,7 +158,7 @@ for p in in_base.glob("data/*.nc"):
 
     ds = xr.open_dataset(p, decode_times=False)
 
-    if "grid_spec" in p.name:  # grid_xt, etc., just for regridding
+    if "grid_spec" in p.name:  # for regridding to UFS
         # edges: grid_lat, grid_lon (dims: grid_x, grid_y)
         # centers: grid_latt, grid_lont (dims: grid_xt, grid_yt)
         # lon in [0, 360)
@@ -220,11 +220,7 @@ for p in in_base.glob("data/*.nc"):
     sel["lat"].attrs.update(lat_attrs)
     sel["lon"].attrs.update(lon_attrs)
 
-    # print("- lat:", sel.lat.values)
-    # print("- lon:", sel.lon.values)
-
     p_out = case_dir / "data" / p.name
-    # print("->(sel)", p_out.as_posix())
     encoding = {
         k: {"zlib": True, "complevel": 3}
         for k in sel.data_vars if k not in {"UTC_OFFSET", "time"}
