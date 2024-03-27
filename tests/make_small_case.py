@@ -19,12 +19,13 @@ latc, lonc = 38.9721, -76.9245
 loc_name = "ncwcp"
 
 # Grid settings
-nx = ny = 3
+nx = ny = 3  # HEMCO grid
 dxy = 0.1
 assert nx % 2 == 1 and ny % 2 == 1, "nx and ny must be odd"
+ne = 1  # edge
 
 s_dxy = f"{dxy:.3g}".replace(".", "")
-case_id = f"{loc_name}_anthro_{s_dxy}x{s_dxy}_nx={nx}_ny={ny}"
+case_id = f"{loc_name}_anthro_{s_dxy}x{s_dxy}_nx={nx}_ny={ny}_ne={ne}"
 case_dir = OUT_BASE / case_id
 case_dir.mkdir(exist_ok=True)
 (case_dir / "data").mkdir(exist_ok=True)
@@ -46,14 +47,26 @@ else:
     lonc = lonc_d
 latc = round(latc, 3)
 lonc = round(lonc, 3)
+lonc = (lonc + 180) % 360 - 180  # ensure [-180, 180)
 
 # Rectangular grid
-latv = np.arange(latc - (ny - 1) / 2 * dxy, latc + (ny - 1) / 2 * dxy + dxy, dxy)[:ny]
-lonv = np.arange(lonc - (nx - 1) / 2 * dxy, lonc + (nx - 1) / 2 * dxy + dxy, dxy)[:nx]
-assert latv.size == ny and lonv.size == nx
+latv = np.arange(
+    latc - (ny - 1 + ne * 2) / 2 * dxy,
+    latc + (ny - 1 + ne * 2) / 2 * dxy + dxy,
+    dxy,
+)[:ny + ne * 2]
+lonv = np.arange(
+    lonc - (nx - 1 + ne * 2) / 2 * dxy,
+    lonc + (nx - 1 + ne * 2) / 2 * dxy + dxy,
+    dxy,
+)[:nx + ne * 2]
+latv = np.round(latv, 3)
+lonv = np.round(lonv, 3)
+assert latv.size == ny + ne * 2 and lonv.size == nx + ne * 2
 print("rounded center:", latc, lonc)
 print("lat:", latv)
 print("lon:", lonv)
+lonv_360 = np.mod(lonv, 360)
 
 
 # We need these config files
@@ -94,10 +107,10 @@ for desc, fn in {
 # NY: 1800
 # NZ: 1
 
-xmin = lonv[0]
-xmax = lonv[-1]
-ymin = latv[0]
-ymax = latv[-1]
+xmin = lonv[ne]  # with outer edge data
+xmax = lonv[-1 - ne]
+ymin = latv[ne]
+ymax = latv[-1 - ne]
 
 fmt = ">9.4f"
 
@@ -131,9 +144,21 @@ for p in IN_BASE.glob("data/*.nc"):
 
     if "HTAP" in p.name:
         # Exact selection
-        sel = ds.sel(lat=latv, lon=np.mod(lonv, 360))
+        sel = ds.sel(lat=latv, lon=lonv_360)
+        print("- lat exact:", sel.lat.values)
+        print("- lon exact:", sel.lon.values)
     else:
         sel = ds.sel(lat=latv, lon=lonv, method="nearest")
+        print("- lat nearest:", sel.lat.values)
+        print("- lon nearest:", sel.lon.values)
+
+    # Replace lat/lon
+    u_lat = sel.lat.units
+    u_lon = sel.lon.units
+    sel = sel.assign_coords(lat=latv, lon=lonv)
+    sel["lat"].attrs.update(units=u_lat)
+    sel["lon"].attrs.update(units=u_lon)
+
     print("- lat:", sel.lat.values)
     print("- lon:", sel.lon.values)
 
