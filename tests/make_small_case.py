@@ -37,9 +37,12 @@ s_dx = f"{dx:.3g}".replace(".", "")
 s_dy = f"{dy:.3g}".replace(".", "")
 case_id = f"{case_id_in}_dx={s_dx}_dy={s_dy}_nx={nx}_ny={ny}_ne={ne}"
 case_dir = OUT_BASE / case_id
-case_dir.mkdir(exist_ok=True)
-(case_dir / "data").mkdir(exist_ok=True)
 print("full case ID:", case_id)
+if case_dir.is_dir():
+    print(f"removing existing case directory")
+    shutil.rmtree(case_dir)
+case_dir.mkdir()
+(case_dir / "data").mkdir()
 
 # Round center point to nearest grid point center, assuming [0, dx, dx + 1, ...] are edges
 xc_i, yc_i = lonc, latc
