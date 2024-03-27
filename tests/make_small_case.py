@@ -161,27 +161,24 @@ for p in in_base.glob("data/*.nc"):
         # centers: grid_latt, grid_lont (dims: grid_xt, grid_yt)
         # lon in [0, 360)
 
-        da = ds.grid_lont
-        assert da.dims == ("grid_yt", "grid_xt")
-        a = da.values
-        inds = ((a >= lon_360[0]) & (a <= lon_360[-1])).nonzero()[1]
-        assert inds.size > 0
-        ix1, ix2 = inds.min(), inds.max()
+        assert ds.grid_lont.dims == ds.grid_latt.dims == ("grid_yt", "grid_xt")
+        lon_gs = ds.grid_lont.values
+        lat_gs = ds.grid_latt.values
+        box = (
+            (lon_gs >= lon_360[0]) & (lon_gs <= lon_360[-1])
+            & (lat_gs >= lat[0]) & (lat_gs <= lat[-1])
+        )
+        y_inds, x_inds = box.nonzero()
+        assert y_inds.size > 0
+        ix1, ix2 = x_inds.min(), x_inds.max()
         if not ix2 - ix1 > 1:
             ix1 -= 1
             ix2 += 1
-
-        da = ds.grid_latt
-        assert da.dims == ("grid_yt", "grid_xt")
-        a = da.values
-        inds = ((a >= lat[0]) & (a <= lat[-1])).nonzero()[0]
-        assert inds.size > 0
-        iy1, iy2 = inds.min(), inds.max()
+        iy1, iy2 = y_inds.min(), y_inds.max()
         if not iy2 - iy1 > 1:
             iy1 -= 1
             iy2 += 1
 
-        buf = 1
         ds = ds.isel(
             grid_xt=slice(ix1, ix2 + 1),
             grid_yt=slice(iy1, iy2 + 1),
@@ -189,16 +186,12 @@ for p in in_base.glob("data/*.nc"):
             grid_y=slice(iy1, iy2 + 2),
         )
 
-        print(ds.grid_lon.values)
-        print(ds.grid_lont.values)
+        # ds.plot.scatter(x="grid_lont", y="grid_latt"); import matplotlib.pyplot as plt; plt.show()
 
-        ds.plot.scatter(x="grid_lont", y="grid_latt")
-        import matplotlib.pyplot as plt; plt.show()
+        print("- lon:", ds.grid_lon.values)
+        print("- lat:", ds.grid_lont.values)
 
-        continue  # FIXME
-
-
-    if "HTAP" in p.name and dx == dy == 0.1:
+    elif "HTAP" in p.name and dx == dy == 0.1:
         # Exact selection
         sel = ds.sel(lat=lat, lon=lon_360)
         print("- lat exact:", sel.lat.values)
