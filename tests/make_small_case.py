@@ -16,71 +16,69 @@ OUT_BASE = HERE / "data"
 
 # NCWCP
 latc, lonc = 38.9721, -76.9245
-loc_name = "ncwcp"
+loc_id = "ncwcp"
 
 # Grid settings
 nx = ny = 3  # HEMCO grid
-dxy = 0.1
+dx = dy = 0.1
 assert nx % 2 == 1 and ny % 2 == 1, "nx and ny must be odd"
 ne = 1  # edge
 
-s_dxy = f"{dxy:.3g}".replace(".", "")
-case_id = f"{loc_name}_anthro_{s_dxy}x{s_dxy}_nx={nx}_ny={ny}_ne={ne}"
+s_dx = f"{dx:.3g}".replace(".", "")
+s_dy = f"{dy:.3g}".replace(".", "")
+
+emis_type = "anthro"
+
+case_id = f"{loc_id}_{emis_type}_dx={s_dx}_dy={s_dy}_nx={nx}_ny={ny}_ne={ne}"
 case_dir = OUT_BASE / case_id
 case_dir.mkdir(exist_ok=True)
 (case_dir / "data").mkdir(exist_ok=True)
+print("case ID:", case_id)
 
-# Round center to nearest HTAP grid point, which 0.1 deg but on the 0.05s
-print("original center:", latc, lonc)
-r = 1 / dxy
-latc_u = round(latc * r - dxy / 2) / r + dxy / 2
-latc_d = round(latc * r + dxy / 2) / r - dxy / 2
-lonc_u = round(lonc * r - dxy / 2) / r + dxy / 2
-lonc_d = round(lonc * r + dxy / 2) / r - dxy / 2
-if abs(latc - latc_u) < abs(latc - latc_d):
-    latc = latc_u
-else:
-    latc = latc_d
-if abs(lonc - lonc_u) < abs(lonc - lonc_d):
-    lonc = lonc_u
-else:
-    lonc = lonc_d
-latc = round(latc, 3)
-lonc = round(lonc, 3)
-lonc = (lonc + 180) % 360 - 180  # ensure [-180, 180)
+# Round center point to nearest grid point center, assuming [0, dx, dx + 1, ...] are edges
+xc_i, yc_i = lonc, latc
+rx = 1 / dx
+ry = 1 / dy
+yc_u = round(yc_i * ry - dy / 2) / ry + dy / 2
+yc_d = round(yc_i * ry + dy / 2) / ry - dy / 2
+xc_u = round(xc_i * rx - dx / 2) / rx + dx / 2
+xc_d = round(xc_i * rx + dx / 2) / rx - dx / 2
+yc, _ = sorted([yc_u, yc_d], key=lambda y: abs(yc_i - y))
+xc, _ = sorted([xc_u, xc_d], key=lambda x: abs(xc_i - x))
+yc = round(yc, 3)
+xc = round(xc, 3)
+xc = (xc + 180) % 360 - 180  # ensure [-180, 180)
+fmt = "9.4f"
+print(f"original center (y, x): {yc_i:{fmt}} {xc_i:{fmt}}")
+print(f"rounded center  (y, x): {xc:{fmt}} {yc:{fmt}}")
 
-# Rectangular grid
-latv = np.arange(
-    latc - (ny - 1 + ne * 2) / 2 * dxy,
-    latc + (ny - 1 + ne * 2) / 2 * dxy + dxy,
-    dxy,
+# Rectangular grid (centers)
+y = np.arange(
+    yc - (ny - 1 + ne * 2) / 2 * dy,
+    yc + (ny - 1 + ne * 2) / 2 * dy + dy,
+    dy,
 )[:ny + ne * 2]
-lonv = np.arange(
-    lonc - (nx - 1 + ne * 2) / 2 * dxy,
-    lonc + (nx - 1 + ne * 2) / 2 * dxy + dxy,
-    dxy,
+x = np.arange(
+    xc - (nx - 1 + ne * 2) / 2 * dx,
+    xc + (nx - 1 + ne * 2) / 2 * dx + dx,
+    dx,
 )[:nx + ne * 2]
-latv = np.round(latv, 3)
-lonv = np.round(lonv, 3)
-assert latv.size == ny + ne * 2 and lonv.size == nx + ne * 2
-print("rounded center:", latc, lonc)
-print("lat:", latv)
-print("lon:", lonv)
-lonv_360 = np.mod(lonv, 360)
+y = np.round(y, 3)
+x = np.round(x, 3)
+assert y.size == ny + ne * 2 and x.size == nx + ne * 2
+x_360 = np.mod(x, 360)
+print("lat (y):", y)
+print("lon (x):", x)
+print("lon (x) 360:", x_360)
 
 
 # We need these config files
-# Only grid file, is used to set the HEMCO grid,
-# should need to be adjusted
+# Only the grid file, which is used to set the HEMCO grid, should need to be adjusted
 # - HEMCO_Config.rc
 # - HEMCO_sa_Diagn.rc
 # - HEMCO_sa_Grid.rc
 # - HEMCO_sa_Spec.rc
 # - HEMCO_sa_Time.rc
-
-rc_files = sorted(IN_BASE.glob("*.rc"))
-s_files = "\n".join(f"- {p.name}" for p in rc_files)
-print(f"Found:\n{s_files}")
 
 for desc, fn in {
     "main config": "HEMCO_Config.rc",
@@ -91,8 +89,15 @@ for desc, fn in {
 }.items():
     p_in = IN_BASE / fn
     if p_in.is_file():
-        print(f"Copying {desc} from {p_in.relative_to(IN_BASE).as_posix()}")
+        print(f"Copying {fn!r} ({desc})")
         shutil.copy(p_in, case_dir / fn)
+    else:
+        rc_files = sorted(IN_BASE.glob("*.rc"))
+        s_files = "\n".join(f"- {p.name}" for p in rc_files)
+        raise RuntimeError(
+            f"{IN_BASE.as_posix()} is missing the {fn!r} file ({desc}). "
+            f"The directory has these .rc files:\n{s_files}"
+        )
 
 
 # Create HEMCO grid spec
@@ -109,12 +114,12 @@ for desc, fn in {
 # NY: 1800
 # NZ: 1
 
-xmin = lonv[ne] - dxy / 2
-xmax = lonv[-1 - ne] + dxy / 2
-ymin = latv[ne] - dxy / 2
-ymax = latv[-1 - ne] + dxy / 2
+xmin = x[ne] - dx / 2
+xmax = x[-1 - ne] + dx / 2
+ymin = y[ne] - dy / 2
+ymax = y[-1 - ne] + dy / 2
 
-fmt = ">9.4f"
+fmt = ">8.3f"
 
 s_hemco_grid_spec = f"""\
 # Emission grid specifications:
@@ -126,45 +131,56 @@ NX: {nx}
 NY: {ny}
 NZ: 1
 """
+fn = "HEMCO_sa_Grid.rc"
+desc = "grid definition"
 sep = "-" * 31
-print("Writing HEMCO grid spec:")
+print(f"Writing {fn!r} ({desc}):")
 print(sep)
 print(s_hemco_grid_spec, end="")
 print(sep)
-print("to", case_dir / "HEMCO_sa_Grid.rc")
-with open(case_dir / "HEMCO_sa_Grid.rc", "w") as f:
+print("to", case_dir / fn)
+with open(case_dir / fn, "w") as f:
     f.write(s_hemco_grid_spec)
 
 
+# Select input data and write to case directory
+lat = y
+lon = x
+lon_360 = x_360
 for p in IN_BASE.glob("data/*.nc"):
     print(p.relative_to(IN_BASE).as_posix())
 
     if "grid_spec" in p.name:  # grid_xt, etc., just for regridding
         continue  # FIXME
 
-    ds = xr.open_dataset(p)
+    ds = xr.open_dataset(p, decode_times=False)
 
-    if "HTAP" in p.name:
+    if "HTAP" in p.name and dx == dy == 0.1:
         # Exact selection
-        sel = ds.sel(lat=latv, lon=lonv_360)
+        sel = ds.sel(lat=lat, lon=lon_360)
         print("- lat exact:", sel.lat.values)
         print("- lon exact:", sel.lon.values)
     else:
-        sel = ds.sel(lat=latv, lon=lonv, method="nearest")
+        # Note that nearest for low-res data will include duplicates
+        assert ds.lon.max() < 180
+        sel = ds.sel(lat=lat, lon=lon, method="nearest")
         print("- lat nearest:", sel.lat.values)
         print("- lon nearest:", sel.lon.values)
 
     # Replace lat/lon
-    u_lat = sel.lat.units
-    u_lon = sel.lon.units
-    sel = sel.assign_coords(lat=latv, lon=lonv)
-    sel["lat"].attrs.update(units=u_lat)
-    sel["lon"].attrs.update(units=u_lon)
+    lat_attrs = sel.lat.attrs.copy()
+    lon_attrs = sel.lon.attrs.copy()
+    sel = sel.assign_coords(lat=lat, lon=lon)
+    sel["lat"].attrs.update(lat_attrs)
+    sel["lon"].attrs.update(lon_attrs)
 
-    print("- lat:", sel.lat.values)
-    print("- lon:", sel.lon.values)
+    # print("- lat:", sel.lat.values)
+    # print("- lon:", sel.lon.values)
 
     p_out = case_dir / "data" / p.name
-    print("->(sel)", p_out.as_posix())
-    encoding = {k: {"zlib": True, "complevel": 3} for k in sel.data_vars}
+    # print("->(sel)", p_out.as_posix())
+    encoding = {
+        k: {"zlib": True, "complevel": 3}
+        for k in sel.data_vars if k not in {"UTC_OFFSET", "time"}
+    }
     sel.to_netcdf(p_out, encoding=encoding)
