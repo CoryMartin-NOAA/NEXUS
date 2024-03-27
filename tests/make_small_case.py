@@ -96,7 +96,9 @@ for desc, fn in {
 
 
 # Create HEMCO grid spec
-# Example:
+# The MIN/MAX correspond to outer grid cell edges
+# HEMCO computes the spacing as (MAX - MIN) / N
+# Example (global):
 # > cat HEMCO_sa_Grid.rc
 # # Emission grid specifications:
 # XMIN: -180.0
@@ -107,10 +109,10 @@ for desc, fn in {
 # NY: 1800
 # NZ: 1
 
-xmin = lonv[ne]  # with outer edge data
-xmax = lonv[-1 - ne]
-ymin = latv[ne]
-ymax = latv[-1 - ne]
+xmin = lonv[ne] - dxy / 2
+xmax = lonv[-1 - ne] + dxy / 2
+ymin = latv[ne] - dxy / 2
+ymax = latv[-1 - ne] + dxy / 2
 
 fmt = ">9.4f"
 
