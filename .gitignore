@@ -1,5 +1,13 @@
 .vscode/
 
+# Outputs
+NEXUS_Diag.nc
+NEXUS_Expt.nc
+nexus.emis.*.nc
+HEMCO_restart.*.nc
+PET*.ESMF_LogFile
+HEMCO.log
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
