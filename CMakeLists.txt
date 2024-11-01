@@ -12,7 +12,7 @@ else()
   if("$ENV{FC}" STREQUAL "")
     message(WARNING "FC is set to empty string. You may want to use it to specify a specific compiler.")
   else()
-    message(STATUS "FC is set: '${FC}'")
+    message(STATUS "FC is set: '$ENV{FC}'")
   endif()
 endif()
 
