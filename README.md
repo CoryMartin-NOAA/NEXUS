@@ -57,7 +57,7 @@ Input data:
 
 #### Ubuntu
 
-See https://github.com/zmoon/gha-esmf for examples of how to build ESMF,
+See https://github.com/noaa-oar-arl/gha-esmf for examples of how to build ESMF,
 or follow the steps to download and use a pre-built ESMF.
 
 Remember to set `ESMFMKFILE` to point to the `esmf.mk` file of your ESMF build.
