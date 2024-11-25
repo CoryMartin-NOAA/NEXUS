@@ -944,7 +944,8 @@ contains
     character(len=255)    :: LOC
     character(len=  1)    :: COL
     character(len=255)    :: MyGridFile, ThisLoc
-    character(len=4095)   :: DUM,        ErrMsg,  Msg
+    character(len=5500)   :: DUM
+    character(len=255)    :: ErrMsg, Msg
 
     !=================================================================
     ! SET_GRID begins here
