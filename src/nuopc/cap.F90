@@ -168,7 +168,7 @@ contains
         name, long_name, units
 
       ! Add to field dictionary
-      call NUOPC_FieldDictionaryAddEntry(long_name, units, rc=rc)
+      call NUOPC_FieldDictionaryAddEntry(name, units, rc=rc)
       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
         line=__LINE__, &
         file=__FILE__, &
@@ -177,7 +177,7 @@ contains
       ! Advertise field
       call NUOPC_Advertise(exportState, &
         name=name, &
-        StandardName=long_name, &
+        StandardName=name, &
         LongName=long_name, &
         Units=units, &
         rc=rc)
