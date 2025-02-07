@@ -363,7 +363,7 @@ contains
     ! Set Extension number ExtNr to 0, indicating that the core
     ! module shall be executed.
     HcoState%Options%SpcMin = 1
-    HcoState%Options%SpcMax = 2  ! FIXME: nModelSpec
+    HcoState%Options%SpcMax = -1  ! all species above or equal to SpcMin are considered
     HcoState%Options%CatMin = 1
     HcoState%Options%CatMax = -1
     HcoState%Options%ExtNr  = 0
