@@ -185,7 +185,7 @@ out_data.mkdir()
 
 # Check for FV3 grid spec file
 grid_spec_fn = f"{fv3_res}_grid_spec.tile{fv3_tile}.nc"
-grid_spec_p = in_data / grid_spec_fn
+grid_spec_p = in_base / grid_spec_fn
 if not grid_spec_p.is_file():
     raise FileNotFoundError(f"missing grid spec file: {grid_spec_p.as_posix()}")
 
@@ -193,8 +193,8 @@ if not grid_spec_p.is_file():
 lat = y
 lon = x
 lon_360 = x_360
-for p in in_data.glob("*.nc"):
-    if "grid_spec" in p.name and p.name != grid_spec_fn:
+for p in list(in_data.glob("*.nc")) + [grid_spec_p]:
+    if "grid_spec" in p.name and p != grid_spec_p:
         continue
 
     print(p.relative_to(in_base).as_posix())
