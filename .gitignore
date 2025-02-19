@@ -8,6 +8,7 @@ nexus.emis.*.nc
 HEMCO_restart.*.nc
 PET*.ESMF_LogFile
 HEMCO.log
+NEXUS.log
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
