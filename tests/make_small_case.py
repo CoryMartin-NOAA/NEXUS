@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import shutil
 from pathlib import Path
+from socket import gethostname
 from textwrap import indent
 
 import numpy as np
@@ -49,6 +50,7 @@ case_dir.mkdir()
 # Store settings
 settings = {
     "case_id": case_id,
+    "source": f"{gethostname()}:{in_base.as_posix()}",
     "focus": (latc, lonc),
     "nx": nx,
     "ny": ny,
