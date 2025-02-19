@@ -63,7 +63,7 @@ xc = round(xc, 3)
 xc = (xc + 180) % 360 - 180  # ensure [-180, 180)
 fmt = "9.4f"
 print(f"input focus   (y, x): {yc_i:{fmt}} {xc_i:{fmt}}")
-print(f"rounded focus (y, x): {xc:{fmt}} {yc:{fmt}}")
+print(f"rounded focus (y, x): {yc:{fmt}} {xc:{fmt}}")
 
 # Rectangular grid (centers)
 y = np.arange(
