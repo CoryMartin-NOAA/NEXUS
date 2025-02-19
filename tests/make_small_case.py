@@ -4,6 +4,7 @@ Extract a small spatial subset from larger inputs.
 
 from __future__ import annotations
 
+import json
 import shutil
 from pathlib import Path
 from textwrap import indent
@@ -37,6 +38,7 @@ dx = dy = 0.1
 ne = 1  # thickness of input data halo (cells)
 assert nx % 2 == 1 and ny % 2 == 1, "nx and ny must be odd"
 
+# Make case directory
 s_dx = f"{dx:.3g}".replace(".", "")
 s_dy = f"{dy:.3g}".replace(".", "")
 case_id = f"{case_id_in}_dx={s_dx}_dy={s_dy}_nx={nx}_ny={ny}_ne={ne}"
@@ -47,6 +49,21 @@ if case_dir.is_dir():
     shutil.rmtree(case_dir)
 case_dir.mkdir()
 (case_dir / "data").mkdir()
+
+# Store settings
+settings = {
+    "case_id": case_id_in,
+    "focus": (latc, lonc),
+    "nx": nx,
+    "ny": ny,
+    "dx": dx,
+    "dy": dy,
+    "ne": ne,
+    "fv3_res": fv3_res,
+    "fv3_tile": fv3_tile,
+}
+with open(case_dir / "case.json", "w") as f:
+    json.dump(settings, f, indent=2)
 
 # Round center point to nearest grid point center, assuming [0, dx, dx + 1, ...] are edges
 xc_i, yc_i = lonc, latc
@@ -84,7 +101,6 @@ print("lat (y):", y)
 print("lon (x):", x)
 print("lon (x) 360:", x_360)
 
-
 # We need these config files
 # Only the grid file, which is used to set the HEMCO grid, should need to be adjusted
 # - HEMCO_Config.rc
@@ -113,7 +129,6 @@ for desc, fn in configs.items():
             f"{in_base.as_posix()} is missing the {fn!r} file ({desc}). "
             f"The directory has these .rc files:\n{s_files}"
         )
-
 
 # Create HEMCO grid spec
 # The MIN/MAX correspond to outer grid cell edges
