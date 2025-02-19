@@ -197,6 +197,7 @@ for p in list(in_data.glob("*.nc")) + [grid_spec_p]:
     print(p.relative_to(in_base).as_posix())
 
     ds = xr.open_dataset(p, decode_times=False)
+    sel = None
 
     if "grid_spec" in p.name:  # for regridding to UFS
         # edges: grid_lat, grid_lon (dims: grid_x, grid_y)
@@ -236,14 +237,14 @@ for p in list(in_data.glob("*.nc")) + [grid_spec_p]:
             iy1 -= 1
             iy2 += 1
 
-        ds = ds.isel(
+        sel = ds.isel(
             grid_xt=slice(ix1, ix2 + 1),
             grid_yt=slice(iy1, iy2 + 1),
             grid_x=slice(ix1, ix2 + 2),
             grid_y=slice(iy1, iy2 + 2),
         )
-        print("- lon:", ds.grid_lon.values)
-        print("- lat:", ds.grid_lont.values)
+        print("- lon:", sel.grid_lon.values)
+        print("- lat:", sel.grid_lont.values)
     elif "HTAP" in p.name and dx == dy == 0.1:
         # Exact selection
         sel = ds.sel(lat=lat, lon=lon_360)
@@ -256,14 +257,18 @@ for p in list(in_data.glob("*.nc")) + [grid_spec_p]:
         print("- lat nearest:", sel.lat.values)
         print("- lon nearest:", sel.lon.values)
 
-    # Replace lat/lon
-    lat_attrs = sel.lat.attrs.copy()
-    lon_attrs = sel.lon.attrs.copy()
-    sel = sel.assign_coords(lat=lat, lon=lon)
-    sel["lat"].attrs.update(lat_attrs)
-    sel["lon"].attrs.update(lon_attrs)
+    if p == grid_spec_p:
+        p_out = case_dir / "grid_spec.nc"
+    else:
+        p_out = out_data / p.name
 
-    p_out = out_data / p.name
+        # Replace lat/lon
+        lat_attrs = sel.lat.attrs.copy()
+        lon_attrs = sel.lon.attrs.copy()
+        sel = sel.assign_coords(lat=lat, lon=lon)
+        sel["lat"].attrs.update(lat_attrs)
+        sel["lon"].attrs.update(lon_attrs)
+
     encoding = {
         k: {"zlib": True, "complevel": 3} for k in sel.data_vars if k not in {"UTC_OFFSET", "time"}
     }
