@@ -41,3 +41,17 @@ jobs:
 
       - name: Build
         run: cmake --build build
+
+      - name: Run included test cases
+        run: |
+          bin="$PWD/build/bin/nexus"
+          cd tests/cases
+          for d in *; do
+            cd $d
+            echo "test case: $d"
+            echo "- no regrid"
+            $bin -c NEXUS_Config.rc || exit 1
+            echo "- regrid"
+            $bin -c NEXUS_Config.rc -r grid_spec.nc || exit 1
+            cd ..
+          done
