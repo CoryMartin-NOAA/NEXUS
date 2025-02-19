@@ -44,14 +44,18 @@ jobs:
 
       - name: Run included test cases
         run: |
+          set -x
           bin="$PWD/build/bin/nexus"
+          failed=0
           cd tests/cases
           for d in *; do
             cd $d
-            echo "test case: $d"
-            echo "- no regrid"
-            $bin -c NEXUS_Config.rc || exit 1
-            echo "- regrid"
-            $bin -c NEXUS_Config.rc -r grid_spec.nc || exit 1
+            $bin -c NEXUS_Config.rc || failed=1
+            $bin -c NEXUS_Config.rc -r grid_spec.nc || failed=1
+            if [[ "$failed" == 1 ]]; then
+              tail -n 20 NEXUS.log
+              cat PET0.ESMF_LogFile
+              exit 1
+            fi
             cd ..
           done
