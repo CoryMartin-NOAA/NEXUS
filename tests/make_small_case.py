@@ -242,9 +242,6 @@ for p in list(in_data.glob("*.nc")) + [grid_spec_p]:
             grid_x=slice(ix1, ix2 + 2),
             grid_y=slice(iy1, iy2 + 2),
         )
-
-        # ds.plot.scatter(x="grid_lont", y="grid_latt"); import matplotlib.pyplot as plt; plt.show()
-
         print("- lon:", ds.grid_lon.values)
         print("- lat:", ds.grid_lont.values)
     elif "HTAP" in p.name and dx == dy == 0.1:
