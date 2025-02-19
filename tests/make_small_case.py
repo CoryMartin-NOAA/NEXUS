@@ -14,11 +14,11 @@ import pandas as pd
 import xarray as xr
 
 HERE = Path(__file__).parent
-OUT_BASE = HERE / "data"
+OUT_BASE = HERE / "cases"
 
 
 # Short reference to the focus location and emissions configuration
-case_id_in = "ncwcp_anthro"
+case_id = "ncwcp_anthro_pm"
 
 # Focus location
 latc, lonc = 38.9721, -76.9245
@@ -39,9 +39,6 @@ ne = 1  # thickness of input data halo (cells)
 assert nx % 2 == 1 and ny % 2 == 1, "nx and ny must be odd"
 
 # Make case directory
-s_dx = f"{dx:.3g}".replace(".", "")
-s_dy = f"{dy:.3g}".replace(".", "")
-case_id = f"{case_id_in}_dx={s_dx}_dy={s_dy}_nx={nx}_ny={ny}_ne={ne}"
 case_dir = OUT_BASE / case_id
 print("full case ID:", case_id)
 if case_dir.is_dir():
@@ -51,7 +48,7 @@ case_dir.mkdir()
 
 # Store settings
 settings = {
-    "case_id": case_id_in,
+    "case_id": case_id,
     "focus": (latc, lonc),
     "nx": nx,
     "ny": ny,
