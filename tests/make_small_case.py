@@ -1,6 +1,7 @@
 """
 Extract a small spatial subset from larger inputs.
 """
+
 from __future__ import annotations
 
 import shutil
@@ -20,7 +21,10 @@ case_id_in = "ncwcp_anthro"
 
 # Focus location
 latc, lonc = 38.9721, -76.9245
-# latc, lonc = 38.9721, -26.9245  # testing tile1
+
+# FV3 grid tile
+fv3_res = "C384"
+fv3_tile = 5
 
 # Input case directory
 in_base = Path("~/downloads/gocart-nexus").expanduser()
@@ -39,7 +43,7 @@ case_id = f"{case_id_in}_dx={s_dx}_dy={s_dy}_nx={nx}_ny={ny}_ne={ne}"
 case_dir = OUT_BASE / case_id
 print("full case ID:", case_id)
 if case_dir.is_dir():
-    print(f"removing existing case directory")
+    print(f"removing existing case directory {case_dir.as_posix()}")
     shutil.rmtree(case_dir)
 case_dir.mkdir()
 (case_dir / "data").mkdir()
@@ -66,12 +70,12 @@ y = np.arange(
     yc - (ny - 1 + ne * 2) / 2 * dy,
     yc + (ny - 1 + ne * 2) / 2 * dy + dy,
     dy,
-)[:ny + ne * 2]
+)[: ny + ne * 2]
 x = np.arange(
     xc - (nx - 1 + ne * 2) / 2 * dx,
     xc + (nx - 1 + ne * 2) / 2 * dx + dx,
     dx,
-)[:nx + ne * 2]
+)[: nx + ne * 2]
 y = np.round(y, 3)
 x = np.round(x, 3)
 assert y.size == ny + ne * 2 and x.size == nx + ne * 2
@@ -150,6 +154,11 @@ print(sep)
 with open(case_dir / fn, "w") as f:
     f.write(s_hemco_grid_spec)
 
+# Check for FV3 grid spec file
+grid_spec_fn = f"{fv3_res}_grid_spec.tile{fv3_tile}.nc"
+grid_spec_p = in_base / "data" / grid_spec_fn
+if not grid_spec_p.is_file():
+    raise FileNotFoundError(f"missing grid spec file: {grid_spec_p.as_posix()}")
 
 # Select input data and write to case directory
 lat = y
@@ -157,6 +166,9 @@ lon = x
 lon_360 = x_360
 assert (in_base / "data").is_dir()
 for p in in_base.glob("data/*.nc"):
+    if "grid_spec" in p.name and p.name != grid_spec_fn:
+        continue
+
     print(p.relative_to(in_base).as_posix())
 
     ds = xr.open_dataset(p, decode_times=False)
@@ -170,20 +182,26 @@ for p in in_base.glob("data/*.nc"):
         lon_gs = ds.grid_lont.values
         lat_gs = ds.grid_latt.values
         box = (
-            (lon_gs >= lon_360[0]) & (lon_gs <= lon_360[-1])
-            & (lat_gs >= lat[0]) & (lat_gs <= lat[-1])
+            (lon_gs >= lon_360[0])
+            & (lon_gs <= lon_360[-1])
+            & (lat_gs >= lat[0])
+            & (lat_gs <= lat[-1])
         )
         y_inds, x_inds = box.nonzero()
         if not y_inds.size > 0:
             print("- UFS grid spec appears not to overlap target grid. Will skip.")
             parts = [
                 "lons:",
-                pd.cut(lon_gs.ravel(), bins=np.arange(0, 360 + 20, 20), right=False).value_counts().to_string(),
+                pd.cut(lon_gs.ravel(), bins=np.arange(0, 360 + 20, 20), right=False)
+                .value_counts()
+                .to_string(),
                 "lats:",
-                pd.cut(lat_gs.ravel(), bins=np.arange(-90, 90 + 20, 20), right=False).value_counts().to_string(),
+                pd.cut(lat_gs.ravel(), bins=np.arange(-90, 90 + 20, 20), right=False)
+                .value_counts()
+                .to_string(),
             ]
             print(indent("\n".join(parts), "  "))
-            continue
+            continue  # TODO: error by default instead?
         ix1, ix2 = x_inds.min(), x_inds.max()
         if not ix2 - ix1 > 1:
             ix1 -= 1
@@ -225,7 +243,6 @@ for p in in_base.glob("data/*.nc"):
 
     p_out = case_dir / "data" / p.name
     encoding = {
-        k: {"zlib": True, "complevel": 3}
-        for k in sel.data_vars if k not in {"UTC_OFFSET", "time"}
+        k: {"zlib": True, "complevel": 3} for k in sel.data_vars if k not in {"UTC_OFFSET", "time"}
     }
     sel.to_netcdf(p_out, encoding=encoding)
