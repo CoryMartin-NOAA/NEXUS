@@ -214,7 +214,7 @@ for p in list(in_data.glob("*.nc")) + [grid_spec_p]:
         )
         y_inds, x_inds = box.nonzero()
         if not y_inds.size > 0:
-            print("- UFS grid spec appears not to overlap target grid. Will skip.")
+            print("- ERROR: UFS grid spec appears not to overlap target grid.")
             parts = [
                 "lons:",
                 pd.cut(lon_gs.ravel(), bins=np.arange(0, 360 + 20, 20), right=False)
@@ -226,7 +226,7 @@ for p in list(in_data.glob("*.nc")) + [grid_spec_p]:
                 .to_string(),
             ]
             print(indent("\n".join(parts), "  "))
-            continue  # TODO: error by default instead?
+            raise SystemExit(2)
         ix1, ix2 = x_inds.min(), x_inds.max()
         if not ix2 - ix1 > 1:
             ix1 -= 1
