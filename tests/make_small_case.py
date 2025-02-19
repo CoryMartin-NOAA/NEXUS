@@ -93,13 +93,15 @@ print("lon (x) 360:", x_360)
 # - HEMCO_sa_Spec.rc
 # - HEMCO_sa_Time.rc
 
-for desc, fn in {
+configs = {
     "main config": "HEMCO_Config.rc",
     "diagnostic definitions": "HEMCO_sa_Diagn.rc",
     # "grid definition": "HEMCO_sa_Grid.rc",
     "species definitions": "HEMCO_sa_Spec.rc",
     "simulation time settings": "HEMCO_sa_Time.rc",
-}.items():
+}
+
+for desc, fn in configs.items():
     p_in = in_base / fn
     if p_in.is_file():
         print(f"copying {fn!r} ({desc})")
@@ -154,9 +156,20 @@ print(sep)
 with open(case_dir / fn, "w") as f:
     f.write(s_hemco_grid_spec)
 
+# From the the HEMCO config, learn the base input directory
+with open(in_base / configs["main config"]) as f:
+    for line in f:
+        if line.startswith("ROOT"):
+            root = line.split(":")[-1].strip()
+            break
+    else:
+        raise AssertionError("ROOT setting not found")
+in_data = in_base / root
+assert in_data.is_dir()
+
 # Check for FV3 grid spec file
 grid_spec_fn = f"{fv3_res}_grid_spec.tile{fv3_tile}.nc"
-grid_spec_p = in_base / "data" / grid_spec_fn
+grid_spec_p = in_data / grid_spec_fn
 if not grid_spec_p.is_file():
     raise FileNotFoundError(f"missing grid spec file: {grid_spec_p.as_posix()}")
 
@@ -164,8 +177,7 @@ if not grid_spec_p.is_file():
 lat = y
 lon = x
 lon_360 = x_360
-assert (in_base / "data").is_dir()
-for p in in_base.glob("data/*.nc"):
+for p in in_data.glob("*.nc"):
     if "grid_spec" in p.name and p.name != grid_spec_fn:
         continue
 
@@ -241,7 +253,7 @@ for p in in_base.glob("data/*.nc"):
     sel["lat"].attrs.update(lat_attrs)
     sel["lon"].attrs.update(lon_attrs)
 
-    p_out = case_dir / "data" / p.name
+    p_out = case_dir / in_data.name / p.name
     encoding = {
         k: {"zlib": True, "complevel": 3} for k in sel.data_vars if k not in {"UTC_OFFSET", "time"}
     }
