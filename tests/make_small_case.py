@@ -62,6 +62,7 @@ settings = {
 }
 with open(case_dir / "case.json", "w") as f:
     json.dump(settings, f, indent=2)
+    f.write("\n")
 
 # Round center point to nearest grid point center, assuming [0, dx, dx + 1, ...] are edges
 xc_i, yc_i = lonc, latc
