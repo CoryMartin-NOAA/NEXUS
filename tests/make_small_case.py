@@ -48,7 +48,6 @@ if case_dir.is_dir():
     print(f"removing existing case directory {case_dir.as_posix()}")
     shutil.rmtree(case_dir)
 case_dir.mkdir()
-(case_dir / "data").mkdir()
 
 # Store settings
 settings = {
@@ -103,14 +102,14 @@ print("lon (x) 360:", x_360)
 
 # We need these config files
 # Only the grid file, which is used to set the HEMCO grid, should need to be adjusted
-# - HEMCO_Config.rc
+# - NEXUS_Config.rc
 # - HEMCO_sa_Diagn.rc
 # - HEMCO_sa_Grid.rc
 # - HEMCO_sa_Spec.rc
 # - HEMCO_sa_Time.rc
 
 configs = {
-    "main config": "HEMCO_Config.rc",
+    "main config": "NEXUS_Config.rc",
     "diagnostic definitions": "HEMCO_sa_Diagn.rc",
     # "grid definition": "HEMCO_sa_Grid.rc",
     "species definitions": "HEMCO_sa_Spec.rc",
@@ -181,6 +180,8 @@ with open(in_base / configs["main config"]) as f:
         raise AssertionError("ROOT setting not found")
 in_data = in_base / root
 assert in_data.is_dir()
+out_data = case_dir / in_data.name
+out_data.mkdir()
 
 # Check for FV3 grid spec file
 grid_spec_fn = f"{fv3_res}_grid_spec.tile{fv3_tile}.nc"
@@ -268,7 +269,7 @@ for p in in_data.glob("*.nc"):
     sel["lat"].attrs.update(lat_attrs)
     sel["lon"].attrs.update(lon_attrs)
 
-    p_out = case_dir / in_data.name / p.name
+    p_out = out_data / p.name
     encoding = {
         k: {"zlib": True, "complevel": 3} for k in sel.data_vars if k not in {"UTC_OFFSET", "time"}
     }
