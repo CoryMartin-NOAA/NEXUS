@@ -14,6 +14,7 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
 CONFIG_BASE_DIR = REPO / "config"
 TMP_BASE_DIR = REPO / "tmp"
+INPUT_SRC_BASE_DIR = Path("/scratch1/RDARCH/rda-arl-gpu/Barry.Baker/emissions/nexus")
 
 CONFIG_DIRS = sorted(p for p in CONFIG_BASE_DIR.glob("*") if p.is_dir())
 
@@ -92,7 +93,7 @@ for config in configs_to_run:
         "commit": current_commit(),
     }
 
-    # Create directory
+    # Create base directory
     suff = uuid4().hex[:7]
     tmp_dir = TMP_BASE_DIR / f"{config.name}-{suff}"
     tmp_dir.mkdir(exist_ok=False)  # or could try another suffix
@@ -101,3 +102,20 @@ for config in configs_to_run:
     with open(tmp_dir / "settings.json", "w") as f:
         json.dump(settings, f, indent=2)
         f.write("\n")
+
+    # Create needed directories
+    for dn in [
+        "input",
+        "output",
+        # "Restarts",  # for HEMCO 3.7+
+    ]:
+        (tmp_dir / dn).mkdir()
+
+    # Link in the input data (all of it)
+    for p in INPUT_SRC_BASE_DIR.glob("*"):
+        (tmp_dir / "input" / p.name).symlink_to(p, True)
+
+    if config.name.startswith("cmaq_gfs_megan_"):
+        # We need GFS_SFC_MEGAN_INPUT.nc
+        # config/megan uses MERRA-2
+        ...  # TODO
