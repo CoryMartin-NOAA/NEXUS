@@ -2,6 +2,8 @@
 Run one or more of our config cases on Hera to test them.
 """
 
+from __future__ import annotations
+
 import argparse
 import datetime
 import json
@@ -14,6 +16,19 @@ CONFIG_BASE_DIR = REPO / "config"
 TMP_BASE_DIR = REPO / "tmp"
 
 CONFIG_DIRS = sorted(p for p in CONFIG_BASE_DIR.glob("*") if p.is_dir())
+
+
+def current_commit() -> str | None:
+    import subprocess
+
+    cmd = ["git", "-C", REPO.as_posix(), "rev-parse", "--verify", "--short", "HEAD"]
+    try:
+        cp = subprocess.run(cmd, check=True, text=True, capture_output=True)
+    except Exception:
+        return None
+    else:
+        return cp.stdout.strip()
+
 
 parser = argparse.ArgumentParser(
     description=__doc__,
@@ -74,6 +89,7 @@ for config in configs_to_run:
     now = datetime.datetime.now(datetime.timezone.utc)
     settings = {
         "created": now.isoformat(),
+        "commit": current_commit(),
     }
 
     # Create directory
