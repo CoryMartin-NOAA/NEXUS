@@ -85,6 +85,30 @@ for config_input in config_inputs:
     print(f"{config_input!r} -> {config}")
     configs_to_run.append(config)
 
+
+job_tpl = r"""\
+#!/bin/bash
+#
+#SBATCH --job-name={job_name}
+#SBATCH --output=slurm-%j.out
+#SBATCH --error=slurm-%j.err
+#SBATCH --nodes={nodes}
+#SBATCH --ntasks={ntasks}
+#SBATCH --queue=debug
+#SBATCH --account=naqfc
+#SBATCH --time=30:00
+
+module use ../../modulefiles
+module load ufs_hera.intel
+
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+echo tic==$(date -Is)==
+srun ../../build/bin/nexus -c NEXUS_Config.rc -r grid_spec.nc
+echo toc==$(date -Is)==
+"""
+
+
 TMP_BASE_DIR.mkdir(exist_ok=True)
 for config in configs_to_run:
     now = datetime.datetime.now(datetime.timezone.utc)
@@ -103,6 +127,8 @@ for config in configs_to_run:
         json.dump(settings, f, indent=2)
         f.write("\n")
 
+    # TODO: copy rc files (optionally modifying grid and time)
+
     # Create needed directories
     for dn in [
         "input",
@@ -115,7 +141,18 @@ for config in configs_to_run:
     for p in INPUT_SRC_BASE_DIR.glob("*"):
         (tmp_dir / "input" / p.name).symlink_to(p, True)
 
+    # TODO: copy or link FV3 grid spec
+
     if config.name.startswith("cmaq_gfs_megan_"):
         # We need GFS_SFC_MEGAN_INPUT.nc
         # config/megan uses MERRA-2
         ...  # TODO
+
+    # Write job script
+    job = job_tpl.format(
+        job_name=f"nexus-{suff}",
+        nodes=1,
+        ntasks=1,
+    )
+    with open(tmp_dir / "job.sh", "w") as f:
+        f.write(job)
