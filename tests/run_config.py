@@ -216,6 +216,7 @@ for config in configs_to_run:
         "nodes": args.nodes,
         "ntasks": args.ntasks,
         "cpus_per_task": args.cpus_per_task,
+        "grid_factor": args.grid_factor,
     }
 
     # Create base directory
