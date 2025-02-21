@@ -163,10 +163,12 @@ for config_input in config_inputs:
             if set(config_input.replace(",", " ").split()) <= set(p.name.split("_"))
         ]
     if not matches:
-        print(f"error: no matches for {config_input!r}")
+        print(
+            f"error: no config matches for input {config_input!r}. "
+            f"The available configs are {[p.name for p in CONFIG_DIRS]}."
+        )
         raise SystemExit(2)
     for config in matches:
-        print(f"{config_input!r} -> {config}")
         configs_to_run.append(config)
 
 if args.grid_factor is not None and not args.grid_factor.startswith(("*", "/")):
@@ -203,8 +205,6 @@ echo toc==$(date -Is)==
 
 TMP_BASE_DIR.mkdir(exist_ok=True)
 for config in configs_to_run:
-    print(config.name)
-
     now = datetime.datetime.now(datetime.timezone.utc)
     settings = {
         "created": now.isoformat(),
@@ -219,6 +219,7 @@ for config in configs_to_run:
     suff = uuid4().hex[:7]
     tmp_dir = TMP_BASE_DIR / f"{config.name}-{suff}"
     tmp_dir.mkdir(exist_ok=False)  # or could try another suffix
+    print(tmp_dir.relative_to(REPO).as_posix())
 
     # Write info
     with open(tmp_dir / "settings.json", "w") as f:
