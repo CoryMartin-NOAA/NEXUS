@@ -41,10 +41,11 @@ parser.add_argument(
     "--config",
     action="append",
     help=(
-        "config case to run (exact match, takes priority if found) "
-        "or a space- or comma-separated list of words to match against "
-        "(e.g. 'gfs megan' or gfs,megan). "
-        "You can use -c multiple times to run more than one case."
+        "config case to run (exact match) "
+        "or a space- or comma-separated list of words that the config name contains "
+        "(e.g. 'gfs megan' or gfs,megan; "
+        "at least one delimiter must be present but it can be trailing, e.g. megan,). "
+        "You can use -c multiple times."
     ),
 )
 
@@ -72,8 +73,8 @@ configs_to_run = []
 for config_input in config_inputs:
     # First look for exact match
     matches = [p for p in CONFIG_DIRS if p.name == config_input]
-    if not matches:
-        # Otherwise look for parts matches
+    if not matches and {",", " "}.intersection(config_input):
+        # Otherwise look for parts matches if at least one delimiter
         matches = [
             p
             for p in CONFIG_DIRS
