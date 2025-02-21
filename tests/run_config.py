@@ -98,16 +98,26 @@ parser.add_argument(
 
 parser.add_argument(
     "-N",
+    "--nodes",
     type=int,
-    default=1,
-    help="number of nodes",
+    default=None,
+    help="number of nodes. By default, let Slurm decide based on -n/--ntasks.",
 )
 
 parser.add_argument(
     "-n",
+    "--ntasks",
+    type=int,
+    default=1,
+    help="number of Slurm tasks (MPI)",
+)
+
+parser.add_argument(
+    "-p",
+    "--cpus-per-task",
     type=int,
     default=4,
-    help="number of Slurm tasks",
+    help="number of CPUs per task (OMP)",
 )
 
 parser.add_argument(
@@ -171,6 +181,7 @@ job_tpl = r"""
 #SBATCH --error=slurm-%j.err
 #SBATCH --nodes={nodes}
 #SBATCH --ntasks={ntasks}
+#SBATCH --cpus-per-task={cpus_per_task}
 #SBATCH --qos=debug
 #SBATCH --account=naqfc
 #SBATCH --time=30:00
@@ -179,7 +190,6 @@ module use ../../modulefiles
 module load ufs_hera.intel
 
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
-echo nproc==$(nproc)==
 echo OMP_NUM_THREADS==$OMP_NUM_THREADS==
 
 rm -f NEXUS.log
@@ -198,9 +208,11 @@ for config in configs_to_run:
     now = datetime.datetime.now(datetime.timezone.utc)
     settings = {
         "created": now.isoformat(),
+        "config": config.name,
         "commit": current_commit(),
-        "nodes": args.N,
-        "ntasks": args.n,
+        "nodes": args.nodes,
+        "ntasks": args.ntasks,
+        "cpus_per_task": args.cpus_per_task,
     }
 
     # Create base directory
@@ -277,8 +289,9 @@ for config in configs_to_run:
     # Write job script
     job = job_tpl.format(
         job_name=f"nexus-{suff}",
-        nodes=args.N,
-        ntasks=args.n,
+        nodes=args.nodes or "",
+        ntasks=args.ntasks,
+        cpus_per_task=args.cpus_per_task,
     )
     with open(tmp_dir / "job.sh", "w") as f:
         f.write(job)
