@@ -272,7 +272,7 @@ for config in configs_to_run:
         p = Path("/scratch1/RDARCH/rda-arl-gpu/Zachary.Moon/gfs-bio_20221129_2h_fixed.nc")
         if not p.is_file():
             print(f"warning: GFS SFC file not present at {p.as_posix()}")
-        (tmp_dir / "input" / "GFS_SFC_MEGAN_INPUT.nc").symlink_to(p, False)
+        (tmp_dir / "GFS_SFC_MEGAN_INPUT.nc").symlink_to(p, False)
 
     # Write job script
     job = job_tpl.format(
