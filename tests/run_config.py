@@ -203,6 +203,8 @@ rm -f PET*.ESMF_LogFile
 echo tic==$(date -Is)==
 srun ../../build/bin/nexus -c NEXUS_Config.rc -r grid_spec.nc
 echo toc==$(date -Is)==
+
+report-mem
 """.lstrip()
 
 
