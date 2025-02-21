@@ -163,7 +163,7 @@ if args.grid_factor is not None and not args.grid_factor.startswith(("*", "/")):
     args.grid_factor = f"*{args.grid_factor}"
 
 
-job_tpl = r"""\
+job_tpl = r"""
 #!/bin/bash
 #
 #SBATCH --job-name={job_name}
@@ -188,7 +188,7 @@ rm -f PET*.ESMF_LogFile
 echo tic==$(date -Is)==
 srun ../../build/bin/nexus -c NEXUS_Config.rc -r grid_spec.nc
 echo toc==$(date -Is)==
-"""
+""".lstrip()
 
 
 TMP_BASE_DIR.mkdir(exist_ok=True)
