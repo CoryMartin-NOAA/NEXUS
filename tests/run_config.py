@@ -31,6 +31,39 @@ def current_commit() -> str | None:
         return cp.stdout.strip()
 
 
+def update_config(config: str, updates: dict | None = None):
+    """Update line(s) like ``NX: 1250`` with ``updates={'NX': 125}``."""
+    import re
+
+    if updates is None:
+        updates = {}
+
+    if not updates:
+        return config
+
+    rx_keys = "|".join(re.escape(k) for k in updates)
+    rx = rf"^({rx_keys})\s*\:\s*(.*)$"
+    lines = config.splitlines()
+    new_lines = []
+    for line in lines:
+        m = re.fullmatch(rx, line)
+        if m is not None:
+            key, current_val = m.groups()
+            new_val = updates[key]
+            if isinstance(new_val, (int, float)):
+                new_val = str(new_val)
+            elif isinstance(new_val, datetime.datetime):
+                new_val = f"{new_val:%Y-%m-%d %H:%M:%S}"
+            print(f"{key}: {current_val!r} -> {new_val!r}")
+            line = line.replace(current_val, new_val)
+        new_lines.append(line)
+
+    if new_lines == lines:
+        print("warning: updates were provided but config was not modified")
+
+    return "\n".join(new_lines)
+
+
 parser = argparse.ArgumentParser(
     description=__doc__,
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -129,6 +162,8 @@ echo toc==$(date -Is)==
 
 TMP_BASE_DIR.mkdir(exist_ok=True)
 for config in configs_to_run:
+    print(config.name)
+
     now = datetime.datetime.now(datetime.timezone.utc)
     settings = {
         "created": now.isoformat(),
@@ -147,7 +182,28 @@ for config in configs_to_run:
         json.dump(settings, f, indent=2)
         f.write("\n")
 
-    # TODO: copy rc files (optionally modifying grid and time)
+    # Copy rc files (optionally modifying grid and time)
+    for fn in [
+        "NEXUS_Config.rc",
+        "HEMCO_sa_Diagn.rc",
+        "HEMCO_sa_Grid.rc",
+        "HEMCO_sa_Spec.rc",
+        "HEMCO_sa_Time.rc",
+    ]:
+        print(fn)
+        p = config / fn
+        rc_txt = p.read_text()
+        if fn == "HEMCO_sa_Time.rc":
+            rc_txt = update_config(
+                rc_txt,
+                {
+                    "START": "2022-11-29 00:00:00",
+                    "END": "2022-11-29 02:00:00",
+                },
+            )
+        elif fn == "HEMCO_sa_Grid.rc":
+            rc_txt = update_config(rc_txt, {})
+        (tmp_dir / fn).write_text(rc_txt)
 
     # Create needed directories
     for dn in [
@@ -174,8 +230,11 @@ for config in configs_to_run:
 
     if config.name.startswith("cmaq_gfs_megan_"):
         # We need GFS_SFC_MEGAN_INPUT.nc
-        # config/megan uses MERRA-2
-        ...  # TODO
+        # (config/megan uses MERRA-2)
+        p = Path("/scratch1/RDARCH/rda-arl-gpu/Zachary.Moon/gfs-bio_20221129_2h_fixed.nc")
+        if not p.is_file():
+            print(f"warning: GFS SFC file not present at {p.as_posix()}")
+        (tmp_dir / "input" / "GFS_SFC_MEGAN_INPUT.nc").symlink_to(p, False)
 
     # Write job script
     job = job_tpl.format(
