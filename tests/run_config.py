@@ -41,7 +41,9 @@ parser.add_argument(
     "--config",
     action="append",
     help=(
-        "config case to run (can be partial match). "
+        "config case to run (exact match, takes priority if found) "
+        "or a space- or comma-separated list of words to match against "
+        "(e.g. 'gfs megan' or gfs,megan). "
         "You can use -c multiple times to run more than one case."
     ),
 )
@@ -75,19 +77,14 @@ for config_input in config_inputs:
         matches = [
             p
             for p in CONFIG_DIRS
-            if set(config_input.replace("_", " ").split()) <= set(p.name.split("_"))
+            if set(config_input.replace(",", " ").split()) <= set(p.name.split("_"))
         ]
     if not matches:
         print(f"error: no matches for {config_input!r}")
         raise SystemExit(2)
-    elif len(matches) > 1:
-        print(f"error: multiple matches for {config_input!r}:")
-        for match in matches:
-            print(f"- {match}")
-        raise SystemExit(2)
-    (config,) = matches
-    print(f"{config_input!r} -> {config}")
-    configs_to_run.append(config)
+    for config in matches:
+        print(f"{config_input!r} -> {config}")
+        configs_to_run.append(config)
 
 
 job_tpl = r"""\
