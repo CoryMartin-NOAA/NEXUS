@@ -171,7 +171,7 @@ job_tpl = r"""
 #SBATCH --error=slurm-%j.err
 #SBATCH --nodes={nodes}
 #SBATCH --ntasks={ntasks}
-#SBATCH --queue=debug
+#SBATCH --qos=debug
 #SBATCH --account=naqfc
 #SBATCH --time=30:00
 
