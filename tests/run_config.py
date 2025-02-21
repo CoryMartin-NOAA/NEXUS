@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import datetime
 import json
+import subprocess
 from pathlib import Path
 from uuid import uuid4
 
@@ -20,8 +21,6 @@ CONFIG_DIRS = sorted(p for p in CONFIG_BASE_DIR.glob("*") if p.is_dir())
 
 
 def current_commit() -> str | None:
-    import subprocess
-
     cmd = ["git", "-C", REPO.as_posix(), "rev-parse", "--verify", "--short", "HEAD"]
     try:
         cp = subprocess.run(cmd, check=True, text=True, capture_output=True)
@@ -121,6 +120,12 @@ parser.add_argument(
         "Use / as a prefix to indicate division or * to explicitly indicate multiplication. "
         "(You may need to quote this arg to prevent shell expansion.)"
     ),
+)
+
+parser.add_argument(
+    "--submit",
+    action="store_true",
+    help="submit the jobs with sbatch after creating them",
 )
 
 args = parser.parse_args()
@@ -277,3 +282,7 @@ for config in configs_to_run:
     )
     with open(tmp_dir / "job.sh", "w") as f:
         f.write(job)
+
+    if args.submit:
+        cmd = ["sbatch", "job.sh"]
+        subprocess.run(cmd, cwd=tmp_dir, check=True)
