@@ -184,6 +184,7 @@ job_tpl = r"""
 #SBATCH --nodes={nodes}
 #SBATCH --ntasks={ntasks}
 #SBATCH --cpus-per-task={cpus_per_task}
+#SBATCH --mem-per-cpu=4G
 #SBATCH --qos=debug
 #SBATCH --account=naqfc
 #SBATCH --time=30:00
@@ -191,7 +192,9 @@ job_tpl = r"""
 module use ../../modulefiles
 module load ufs_hera.intel
 
-export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+export OMP_NUM_THREADS="$SLURM_CPUS_PER_TASK"
+export OMP_STACKSIZE="1024M"
+
 echo OMP_NUM_THREADS==$OMP_NUM_THREADS==
 
 rm -f NEXUS.log
