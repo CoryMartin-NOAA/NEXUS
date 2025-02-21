@@ -160,15 +160,17 @@ for config in configs_to_run:
     # Link in the input data (all of it)
     for p in INPUT_SRC_BASE_DIR.glob("*"):
         (tmp_dir / "input" / p.name).symlink_to(p, True)
+    if not any((tmp_dir / "input").iterdir()):
+        print("warning: no input data was linked in")
 
     # Link FV3 grid spec
     # /scratch2/NCEPDEV/naqfc/Jianping.Huang/Data/nexus/fix/
     # - grid_spec_793.nc
     # - grid_spec_AQM_NA_13km.nc
-    (tmp_dir / "grid_spec.nc").symlink_to(
-        "/scratch2/NCEPDEV/naqfc/Jianping.Huang/Data/nexus/fix/grid_spec_793.nc",
-        False,
-    )
+    p = Path("/scratch2/NCEPDEV/naqfc/Jianping.Huang/Data/nexus/fix/grid_spec_793.nc")
+    if not p.is_file():
+        print(f"warning: grid spec not present at {p.as_posix()}")
+    (tmp_dir / "grid_spec.nc").symlink_to(p, False)
 
     if config.name.startswith("cmaq_gfs_megan_"):
         # We need GFS_SFC_MEGAN_INPUT.nc
