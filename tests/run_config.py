@@ -141,7 +141,14 @@ for config in configs_to_run:
     for p in INPUT_SRC_BASE_DIR.glob("*"):
         (tmp_dir / "input" / p.name).symlink_to(p, True)
 
-    # TODO: copy or link FV3 grid spec
+    # Link FV3 grid spec
+    # /scratch2/NCEPDEV/naqfc/Jianping.Huang/Data/nexus/fix/
+    # - grid_spec_793.nc
+    # - grid_spec_AQM_NA_13km.nc
+    (tmp_dir / "grid_spec.nc").symlink_to(
+        "/scratch2/NCEPDEV/naqfc/Jianping.Huang/Data/nexus/fix/grid_spec_793.nc",
+        False,
+    )
 
     if config.name.startswith("cmaq_gfs_megan_"):
         # We need GFS_SFC_MEGAN_INPUT.nc
