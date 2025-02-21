@@ -154,6 +154,9 @@ export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 echo nproc==$(nproc)==
 echo OMP_NUM_THREADS==$OMP_NUM_THREADS==
 
+rm -f NEXUS.log
+rm -f PET*.ESMF_LogFile
+
 echo tic==$(date -Is)==
 srun ../../build/bin/nexus -c NEXUS_Config.rc -r grid_spec.nc
 echo toc==$(date -Is)==
