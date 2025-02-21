@@ -54,6 +54,14 @@ def update_config(config: str, updates: dict | None = None):
                 new_val = str(new_val)
             elif isinstance(new_val, datetime.datetime):
                 new_val = f"{new_val:%Y-%m-%d %H:%M:%S}"
+            elif isinstance(new_val, str) and new_val.startswith(("*", "/")):
+                if new_val.startswith("*"):
+                    new_val = str(round(float(current_val) * float(new_val[1:])))
+                elif new_val.startswith("/"):
+                    new_val = str(round(float(current_val) / float(new_val[1:])))
+                else:
+                    raise AssertionError(f"unexpected new val input: {new_val!r}")
+                new_val = str(new_val)
             print(f"{key}: {current_val!r} -> {new_val!r}")
             line = line.replace(current_val, new_val)
         new_lines.append(line)
@@ -103,6 +111,17 @@ parser.add_argument(
     help="number of Slurm tasks",
 )
 
+parser.add_argument(
+    "-d",
+    type=str,
+    default=None,
+    help=(
+        "factor to scale the HEMCO grid NX and NY. "
+        "Use / as a prefix to indicate division or * to explicitly indicate multiplication. "
+        "(You may need to quote this arg to prevent shell expansion.)"
+    ),
+)
+
 args = parser.parse_args()
 
 if args.all:
@@ -133,6 +152,9 @@ for config_input in config_inputs:
     for config in matches:
         print(f"{config_input!r} -> {config}")
         configs_to_run.append(config)
+
+if args.d is not None and not args.d.startswith(("*", "/")):
+    args.d = f"*{args.d}"
 
 
 job_tpl = r"""\
@@ -205,7 +227,14 @@ for config in configs_to_run:
                 },
             )
         elif fn == "HEMCO_sa_Grid.rc":
-            rc_txt = update_config(rc_txt, {})
+            if args.d is not None:
+                rc_txt = update_config(
+                    rc_txt,
+                    {
+                        "NX": args.d,
+                        "NY": args.d,
+                    },
+                )
         (tmp_dir / fn).write_text(rc_txt)
 
     # Create needed directories
