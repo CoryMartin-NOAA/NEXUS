@@ -133,6 +133,15 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "-q",
+    "--qos",
+    help=(
+        "override the job script QOS (debug), "
+        "e.g. for submitting many jobs at once, which debug does not allow"
+    ),
+)
+
+parser.add_argument(
     "--submit",
     action="store_true",
     help="submit the jobs with sbatch after creating them",
@@ -308,5 +317,8 @@ for config in configs_to_run:
         f.write(job)
 
     if args.submit:
-        cmd = ["sbatch", "job.sh"]
+        cmd = ["sbatch"]
+        if args.qos is not None:
+            cmd.extend(["--qos", args.qos])
+        cmd.append("job.sh")
         subprocess.run(cmd, cwd=tmp_dir, check=True)
