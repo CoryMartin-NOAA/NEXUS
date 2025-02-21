@@ -39,7 +39,11 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     "-c",
     "--config",
-    nargs="+",
+    action="append",
+    help=(
+        "config case to run (can be partial match). "
+        "You can use -c multiple times to run more than one case."
+    ),
 )
 
 parser.add_argument(
