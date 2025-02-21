@@ -293,6 +293,10 @@ for config in configs_to_run:
         ntasks=args.ntasks,
         cpus_per_task=args.cpus_per_task,
     )
+    if args.nodes is None:
+        # Comment line, or Slurm will complain
+        directive = "#SBATCH --nodes"
+        job = job.replace(directive, f"#{directive}")
     with open(tmp_dir / "job.sh", "w") as f:
         f.write(job)
 
