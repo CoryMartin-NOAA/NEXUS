@@ -94,7 +94,7 @@ parser.add_argument(
     "-a",
     "--all",
     action="store_true",
-    help="run all config cases (overrides --config)",
+    help="run all config cases (overrides -c/--config)",
 )
 
 parser.add_argument(
@@ -127,12 +127,12 @@ args = parser.parse_args()
 
 if args.all:
     if args.config is not None:
-        print("note: ignoring --config because --all is set")
+        print("note: ignoring -c/--config because -a/--all is set")
 
     config_inputs = [p.name for p in CONFIG_DIRS]
 else:
     if args.config is None:
-        parser.error("must specify --config or --all")
+        parser.error("must specify -c/--config or -a/--all")
 
     config_inputs = args.config
 
