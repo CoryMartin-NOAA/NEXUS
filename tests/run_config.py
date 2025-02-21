@@ -112,7 +112,8 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "-d",
+    "-g",
+    "--grid-factor",
     type=str,
     default=None,
     help=(
@@ -153,8 +154,8 @@ for config_input in config_inputs:
         print(f"{config_input!r} -> {config}")
         configs_to_run.append(config)
 
-if args.d is not None and not args.d.startswith(("*", "/")):
-    args.d = f"*{args.d}"
+if args.grid_factor is not None and not args.grid_factor.startswith(("*", "/")):
+    args.grid_factor = f"*{args.grid_factor}"
 
 
 job_tpl = r"""\
@@ -227,12 +228,12 @@ for config in configs_to_run:
                 },
             )
         elif fn == "HEMCO_sa_Grid.rc":
-            if args.d is not None:
+            if args.grid_factor is not None:
                 rc_txt = update_config(
                     rc_txt,
                     {
-                        "NX": args.d,
-                        "NY": args.d,
+                        "NX": args.grid_factor,
+                        "NY": args.grid_factor,
                     },
                 )
         (tmp_dir / fn).write_text(rc_txt)
