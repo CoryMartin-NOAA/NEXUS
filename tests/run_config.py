@@ -56,6 +56,20 @@ parser.add_argument(
     help="run all config cases (overrides --config)",
 )
 
+parser.add_argument(
+    "-N",
+    type=int,
+    default=1,
+    help="number of nodes",
+)
+
+parser.add_argument(
+    "-n",
+    type=int,
+    default=4,
+    help="number of Slurm tasks",
+)
+
 args = parser.parse_args()
 
 if args.all:
@@ -104,6 +118,8 @@ module use ../../modulefiles
 module load ufs_hera.intel
 
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+echo nproc==$(nproc)==
+echo OMP_NUM_THREADS==$OMP_NUM_THREADS==
 
 echo tic==$(date -Is)==
 srun ../../build/bin/nexus -c NEXUS_Config.rc -r grid_spec.nc
@@ -117,6 +133,8 @@ for config in configs_to_run:
     settings = {
         "created": now.isoformat(),
         "commit": current_commit(),
+        "nodes": args.N,
+        "ntasks": args.n,
     }
 
     # Create base directory
@@ -160,8 +178,8 @@ for config in configs_to_run:
     # Write job script
     job = job_tpl.format(
         job_name=f"nexus-{suff}",
-        nodes=1,
-        ntasks=1,
+        nodes=args.N,
+        ntasks=args.n,
     )
     with open(tmp_dir / "job.sh", "w") as f:
         f.write(job)
