@@ -17,6 +17,7 @@ for d in TMP_BASE_DIR.glob("*"):
     # Load settings info
     with open(d / "settings.json") as f:
         data = json.load(f)
+    data["case_dir"] = d.as_posix()
 
     # Load Slurm stdout
     (slurm_output_p,) = d.glob("slurm-*.out")
