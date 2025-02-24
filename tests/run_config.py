@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 Run one or more of our config cases on Hera to test them.
 """

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 Collect data from runs done with run_config.py
 """
