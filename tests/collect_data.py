@@ -44,7 +44,16 @@ for d in TMP_BASE_DIR.glob("*"):
 
     rows.append(data)
 
-with open(HERE / "data.ndjson", "w") as f:
+p = HERE / "data.ndjson"
+if p.exists():
+    while True:
+        r = input(f"Overwrite {p}? [y/n]: ")
+        if r == "n":
+            raise SystemExit
+        elif r == "y":
+            break
+
+with open(p, "w") as f:
     for data in rows:
         json.dump(data, f)
         f.write("\n")
