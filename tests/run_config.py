@@ -99,13 +99,14 @@ parser.add_argument(
 
 parser.add_argument(
     "-r",
-    "--do-regrid",
+    "--regrid",
     action="store_true",
     default=True,
+    dest="do_regrid",
     help="within NEXUS, regrid the output from the HEMCO grid to the desired FV3 grid using ESMF",
 )
 parser.add_argument(
-    "--no-do-regrid",
+    "--no-regrid",
     action="store_false",
     dest="do_regrid",
 )
