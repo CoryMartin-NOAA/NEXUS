@@ -98,6 +98,19 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "-r",
+    "--do-regrid",
+    action="store_true",
+    default=True,
+    help="within NEXUS, regrid the output from the HEMCO grid to the desired FV3 grid using ESMF",
+)
+parser.add_argument(
+    "--no-do-regrid",
+    action="store_false",
+    dest="do_regrid",
+)
+
+parser.add_argument(
     "-N",
     "--nodes",
     type=int,
@@ -212,7 +225,7 @@ rm -f NEXUS.log
 rm -f PET*.ESMF_LogFile
 
 echo tic==$(date -Is)==
-srun ../../build/bin/nexus -c NEXUS_Config.rc -r grid_spec.nc
+srun ../../build/bin/nexus -c NEXUS_Config.rc {maybe_regrid_arg}
 echo toc==$(date -Is)==
 
 report-mem
@@ -226,6 +239,7 @@ for config in configs_to_run:
         "created": now.isoformat(),
         "config": config.name,
         "commit": current_commit(),
+        "do_regrid": args.do_regrid,
         "nodes": args.nodes,
         "ntasks": args.ntasks,
         "cpus_per_task": args.cpus_per_task,
@@ -310,6 +324,7 @@ for config in configs_to_run:
         nodes=args.nodes or "",
         ntasks=args.ntasks,
         cpus_per_task=args.cpus_per_task,
+        maybe_regrid_arg="-r grid_spec.nc" if args.do_regrid else "",
     )
     if args.nodes is None:
         # Comment line, or Slurm will complain
