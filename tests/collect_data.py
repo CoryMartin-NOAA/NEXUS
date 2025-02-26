@@ -21,12 +21,12 @@ for d in TMP_BASE_DIR.glob("*"):
     data["case_dir"] = d.as_posix()
 
     # Load Slurm stdout
-    (slurm_output_p,) = d.glob("slurm-*.out")
-    slurm_output = slurm_output_p.read_text()
+    (slurm_stdout_p,) = d.glob("slurm-*.out")
+    slurm_stdout = slurm_stdout_p.read_text()
 
     # Get run time from the slurm output
     tic = toc = None
-    for line in slurm_output.splitlines():
+    for line in slurm_stdout.splitlines():
         if line.startswith("tic=="):
             tic = datetime.datetime.fromisoformat(line.split("==")[1])
         elif line.startswith("toc=="):
@@ -34,7 +34,7 @@ for d in TMP_BASE_DIR.glob("*"):
     data["run_time"] = (toc - tic).total_seconds()
 
     # Get mem info from the slurm output
-    lines = slurm_output.splitlines()
+    lines = slurm_stdout.splitlines()
     for i, line in enumerate(lines):
         if line.startswith("Peak memory usage summary:"):
             break
@@ -43,6 +43,13 @@ for d in TMP_BASE_DIR.glob("*"):
     for line in lines[i + 1 : i + 4]:
         a, b = line.split("=")
         data[f"mem_{a.strip()}"] = b.strip()
+
+    # Load Slurm stderr
+    (slurm_stderr_p,) = d.glob("slurm-*.err")
+    slurm_stderr = slurm_stderr_p.read_text()
+
+    # Check for error
+    data["success"] = "slurm: error: " not in slurm_stderr
 
     rows.append(data)
 
