@@ -3,16 +3,47 @@
 Collect data from runs done with run_config.py
 """
 
+import argparse
 import datetime
+import itertools
 import json
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
-TMP_BASE_DIR = REPO / "tmp"
+TMP_BASE_DIR_DEFAULT = REPO / "tmp"
+
+parser = argparse.ArgumentParser(description=__doc__)
+
+parser.add_argument(
+    "base_dirs",
+    metavar="DIRS",
+    type=Path,
+    default=[TMP_BASE_DIR_DEFAULT],
+    nargs="*",
+    help=(
+        "directories to look for run directories in "
+        f"(default: just {TMP_BASE_DIR_DEFAULT.as_posix()})"
+    ),
+)
+
+parser.add_argument(
+    "-o",
+    dest="output_path",
+    type=Path,
+    default=HERE / "data.ndjson",
+    help="output file path (default: %(default)s)",
+)
+
+args = parser.parse_args()
+
+for d in args.base_dirs:
+    if not d.is_dir():
+        print(f"error: input {d.as_posix()!r} is not a directory")
+        raise SystemExit(2)
 
 rows = []
-for d in TMP_BASE_DIR.glob("*"):
+for d in itertools.chain.from_iterable(base_dir.glob("*") for base_dir in args.base_dirs):
     print(d)
 
     # Load settings info
@@ -53,7 +84,9 @@ for d in TMP_BASE_DIR.glob("*"):
 
     rows.append(data)
 
-p = HERE / "data.ndjson"
+print(f"Collected {len(rows)} rows of data")
+
+p = args.output_path
 if p.exists():
     while True:
         r = input(f"Overwrite {p}? [y/n]: ")
