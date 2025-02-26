@@ -1,8 +1,19 @@
 .vscode/
+
+# Build
 *.mod
 
-tmp/
+# Outputs
+NEXUS_Diag.nc
+NEXUS_Expt.nc
+nexus.emis.*.nc
+HEMCO_restart.*.nc
+PET*.ESMF_LogFile
+HEMCO.log
+NEXUS.log
 
+# Testing
+tmp/
 /*.nc
 
 # Byte-compiled / optimized / DLL files
