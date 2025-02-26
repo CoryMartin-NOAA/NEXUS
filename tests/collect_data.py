@@ -49,7 +49,7 @@ for d in TMP_BASE_DIR.glob("*"):
     slurm_stderr = slurm_stderr_p.read_text()
 
     # Check for error
-    data["success"] = "slurm: error: " not in slurm_stderr
+    data["success"] = "srun: error: " not in slurm_stderr
 
     rows.append(data)
 
