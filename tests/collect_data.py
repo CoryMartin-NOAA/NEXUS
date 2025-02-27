@@ -84,7 +84,7 @@ for d in itertools.chain.from_iterable(base_dir.glob("*") for base_dir in args.b
 
     rows.append(data)
 
-print(f"Collected {len(rows)} rows of data")
+print(f"Collected {len(rows)} data records")
 
 p = args.output_path
 if p.exists():
