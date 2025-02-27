@@ -13,7 +13,7 @@ HEMCO.log
 NEXUS.log
 
 # Testing
-tmp/
+tmp*/
 /*.nc
 
 # Byte-compiled / optimized / DLL files
