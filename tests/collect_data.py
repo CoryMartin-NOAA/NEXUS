@@ -72,7 +72,7 @@ for d in itertools.chain.from_iterable(base_dir.glob("*") for base_dir in args.b
     else:
         raise AssertionError("Peak memory usage summary not found")
     for line in lines[i + 1 : i + 4]:
-        a, b = line.split("=")
+        a, b = line.split("=", 1)
         data[f"mem_{a.strip()}"] = b.strip()
 
     # Load Slurm stderr
