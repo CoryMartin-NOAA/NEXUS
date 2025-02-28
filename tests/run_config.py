@@ -116,7 +116,7 @@ parser.add_argument(
     "--nodes",
     type=int,
     default=None,
-    help="number of nodes. By default, let Slurm decide based on -n/--ntasks.",
+    help="number of nodes. By default, let Slurm decide based on -n/--ntasks and -p/--cpus-per-task.",
 )
 
 parser.add_argument(
