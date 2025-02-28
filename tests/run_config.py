@@ -157,9 +157,15 @@ parser.add_argument(
     "-q",
     "--qos",
     help=(
-        "override the job script QOS (debug), "
+        "override the job script QOS (debug) when using --submit, "
         "e.g. for submitting many jobs at once, which debug does not allow"
     ),
+)
+
+parser.add_argument(
+    "-A",
+    "--account",
+    help="override the job script account (naqfc) when using --submit",
 )
 
 parser.add_argument(
@@ -344,5 +350,7 @@ for config in configs_to_run:
         cmd = ["sbatch"]
         if args.qos is not None:
             cmd.extend(["--qos", args.qos])
+        if args.account is not None:
+            cmd.extend(["--account", args.account])
         cmd.append("job.sh")
         subprocess.run(cmd, cwd=tmp_dir, check=True)
