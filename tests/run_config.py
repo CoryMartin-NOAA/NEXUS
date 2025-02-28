@@ -116,7 +116,10 @@ parser.add_argument(
     "--nodes",
     type=int,
     default=None,
-    help="number of nodes. By default, let Slurm decide based on -n/--ntasks and -p/--cpus-per-task.",
+    help=(
+        "number of nodes. "
+        "By default, let Slurm decide based on -n/--ntasks and -c/--cpus-per-task."
+    ),
 )
 
 parser.add_argument(
@@ -132,7 +135,10 @@ parser.add_argument(
     "--cpus-per-task",
     type=int,
     default=4,
-    help="number of CPUs per task (OMP)",
+    help=(
+        "number of CPUs per task (OMP). "
+        "(The short arg in Slurm is -c, not -p, but we're using -c for config.)"
+    ),
 )
 
 parser.add_argument(
