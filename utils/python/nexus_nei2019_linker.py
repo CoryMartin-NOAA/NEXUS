@@ -3,9 +3,9 @@
 Simple utility to link the appropriate NEI2019 date for the workflow.
 """
 
+import logging
 import os
 import sys
-import logging
 from datetime import datetime, timedelta
 from glob import glob
 
@@ -30,7 +30,7 @@ def setup_logger(log_level=logging.INFO):
 
     # Create console handler with formatting
     handler = logging.StreamHandler()
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
@@ -134,11 +134,7 @@ def get_file_map(src_dir, version):
         search_pattern = f"{src_dir}/NEMO/NEI2019/{version}/??/NEI2019*_all.nc"
         logger.info(f"Searching for files with pattern: {search_pattern}")
 
-        files = [
-            fp
-            for fp in glob(search_pattern)
-            if not os.path.islink(fp)
-        ]
+        files = [fp for fp in glob(search_pattern) if not os.path.islink(fp)]
 
         if not files:
             logger.error(f"No files found matching pattern: {search_pattern}")
@@ -159,7 +155,7 @@ def get_file_map(src_dir, version):
                 logger.warning(f"Could not process filename {fp}: {str(e)}")
 
         # Create a more robust mapping by filling in missing days
-        all_months = set(month for month, _ in file_map.keys())
+        all_months = {month for month, _ in file_map.keys()}
         logger.info(f"Found data for {len(all_months)} months")
 
         for mo in all_months:
@@ -200,7 +196,9 @@ def get_file_map(src_dir, version):
                 available_weekend = list(weekend_map.keys())[0]
                 missing_weekend = 13 - available_weekend  # 13-6=7, 13-7=6
                 file_map[(mo, missing_weekend)] = weekend_map[available_weekend]
-                logger.info(f"Using day {available_weekend} data for month {mo}, day {missing_weekend}")
+                logger.info(
+                    f"Using day {available_weekend} data for month {mo}, day {missing_weekend}"
+                )
 
             # If we have no weekend days but have weekdays, use a weekday
             elif len(weekend_map) == 0 and weekday_map:
@@ -251,7 +249,9 @@ def link_file(src_file, tgt_file):
                     logger.info(f"Link already exists and points to correct source: {tgt_file}")
                     return
                 else:
-                    logger.warning(f"Target link exists but points to different source: {tgt_file} -> {current_link}")
+                    logger.warning(
+                        f"Target link exists but points to different source: {tgt_file} -> {current_link}"
+                    )
                     os.remove(tgt_file)
             else:
                 logger.warning(f"Target exists but is not a link, removing: {tgt_file}")
@@ -359,7 +359,9 @@ if __name__ == "__main__":
         work_dir = args.work_dir.rstrip("/")
         version = args.nei_version
 
-        logger.info(f"Starting NEI2019 linker with src_dir={src_dir}, work_dir={work_dir}, version={version}")
+        logger.info(
+            f"Starting NEI2019 linker with src_dir={src_dir}, work_dir={work_dir}, version={version}"
+        )
 
         if not os.path.isdir(src_dir):
             logger.error(f"Source directory does not exist: {src_dir}")
@@ -402,7 +404,9 @@ if __name__ == "__main__":
             mo = d.month
             iwd = d.isoweekday()
 
-            logger.info(f"Processing date: {d.strftime('%Y-%m-%d')}, month: {mo}, isoweekday: {iwd}")
+            logger.info(
+                f"Processing date: {d.strftime('%Y-%m-%d')}, month: {mo}, isoweekday: {iwd}"
+            )
 
             if (mo, iwd) not in file_map:
                 logger.error(f"No source file found for month {mo}, day {iwd}")
@@ -412,7 +416,9 @@ if __name__ == "__main__":
 
             # Form target file path, maintaining the full relative path structure
             src_rel_dir = os.path.dirname(os.path.relpath(src_fp, src_dir))
-            tgt_fn = os.path.basename(src_fp).replace(src_d.strftime(r"%Y%m%d"), d.strftime(r"%Y%m%d"))
+            tgt_fn = os.path.basename(src_fp).replace(
+                src_d.strftime(r"%Y%m%d"), d.strftime(r"%Y%m%d")
+            )
             tgt_fp = os.path.join(work_dir, src_rel_dir, tgt_fn)
 
             try:
