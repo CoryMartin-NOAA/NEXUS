@@ -21,7 +21,8 @@ jobs:
     - name: Clone ufs-weather-model
       run: |
         git clone https://github.com/ufs-community/ufs-weather-model.git
-        cp -r ufs-weather-model/modulefiles ./modulefiles
+        cp -r ufs-weather-model/modulefiles/* ./modulefiles/
+        rm -rf ufs-weather-model
 
     - name: Modify ufs_common.lua
       run: |
