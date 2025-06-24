@@ -38,6 +38,11 @@ jobs:
         sed -i '/bacio/d' modulefiles/ufs_common.lua
         sed -i '/fms/d' modulefiles/ufs_common.lua
 
+    - name: Update model references in help strings
+      run: |
+        find modulefiles/ -type f -exec sed -i 's/UFS Weather Model/NEXUS Model/g' {} +
+        find modulefiles/ -type f -exec sed -i 's/UFS Model/NEXUS Model/g' {} +
+
     - name: Check for changes
       id: changes
       run: |
